@@ -1,8 +1,10 @@
-
-
-
-
-
+create table domains (
+  id int(11) NOT NULL auto_increment,
+  userId int(11),
+  domain varchar(64),
+  cerateTime int(13),
+  PRIMARY KEY  (id)
+);
 
 
 
@@ -170,12 +172,12 @@ INSERT INTO `commissionsku` (`id`, `comNumber`, `skuNumber`, `sku`, `sellerSkuId
 -- 表的结构 `menu`
 --
 
-CREATE TABLE `menu` (
+CREATE TABLE `rights` (
   `id` int(11) NOT NULL,
   `authName` varchar(32) DEFAULT NULL,
   `path` varchar(32) DEFAULT NULL,
   `level` int(13) NOT NULL,
-  `menu_id` int(11) NOT NULL,
+  `rights_id` int(11) NOT NULL,
   `create_time` bigint(13) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -183,7 +185,7 @@ CREATE TABLE `menu` (
 -- 转存表中的数据 `menu`
 --
 
-INSERT INTO `menu` (`id`, `authName`, `path`, `level`, `menu_id`, `create_time`) VALUES
+INSERT INTO `rights` (`id`, `authName`, `path`, `level`, `rights_id`, `create_time`) VALUES
 (1, '用户管理', 'users', 0, 0, 25541343434),
 (2, '商品管理', 'goods', 0, 0, 25541343434),
 (3, '订单管理', 'orders', 0, 0, 25541343434),
@@ -427,7 +429,7 @@ ALTER TABLE `commissionsku`
 --
 -- 表的索引 `menu`
 --
-ALTER TABLE `menu`
+ALTER TABLE `rights`
   ADD PRIMARY KEY (`id`);
 
 --

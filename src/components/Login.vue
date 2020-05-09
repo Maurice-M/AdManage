@@ -57,6 +57,7 @@ export default {
         }
         this.$message.success(res.meta.msg)
         window.sessionStorage.setItem('token', res.data.token)
+        window.sessionStorage.setItem('data', escape(JSON.stringify(res.data.info)))
         this.$router.push('/home')
       })
     }
