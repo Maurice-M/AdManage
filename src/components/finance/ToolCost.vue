@@ -7,29 +7,14 @@
     </el-breadcrumb>
     <el-alert title="注意输入币种为人民币！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-row :gutter="20">
-        <el-col :span="10">
-          <el-input placeholder="请输入花费金额" v-model="toolCost" type="number">
-            <el-select slot="prepend" v-model="toolId" placeholder="请选择类目">
-              <el-option
-                v-for="item in toolList"
-                :key="item.id"
-                :label="item.toolName"
-                :value="item.id"
-              ></el-option>
-            </el-select>
-          </el-input>
-        </el-col>
-        <el-col :span="4">
-          <el-button type="success" @click="addToolCost()">添加日常花费</el-button>
-        </el-col>
-      </el-row>
+      <el-button type="success" @click="addDialogVisible = true">添加日常花费</el-button>
       <el-table :data="toolCostList" border>
         <el-table-column label="ID" prop="id" width="100px"></el-table-column>
         <el-table-column label="工具类" prop="toolName"></el-table-column>
         <el-table-column label="金额(RMB)">
           <template slot-scope="scope">{{ scope.row.toolCost | money }}</template>
         </el-table-column>
+        <el-table-column label="归属人员" prop="name" width="150px"></el-table-column>
         <el-table-column label="时间" width="170px">
           <template slot-scope="scope">{{ scope.row.cerateTime | dataFormat }}</template>
         </el-table-column>
@@ -63,9 +48,49 @@
         </el-col>
       </el-row>
     </el-card>
+    <!-- 添加工具花费金额 -->
+    <el-dialog
+      title="添加工具花费金额"
+      :visible.sync="addDialogVisible"
+      width="50%"
+      @close="addDialogClose()"
+    >
+      <el-form :model="addFrom" :rules="addFromRules" ref="addFromRef" label-width="100px">
+        <el-form-item label="归属人员" prop="userId">
+          <el-select v-model="addFrom.userId" placeholder="请选择人员">
+            <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="花费类目" prop="toolId">
+          <el-select v-model="addFrom.toolId" placeholder="请选择类目">
+            <el-option
+              v-for="item in toolList"
+              :key="item.id"
+              :label="item.toolName"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="花费金额" prop="toolCost">
+          <el-input v-model="addFrom.toolCost" type="number" placeholder="请输入花费金额"></el-input>
+        </el-form-item>
+        <el-form-item label="时间" prop="cerateTime">
+          <el-date-picker
+            v-model="addFrom.cerateTime"
+            type="datetime"
+            placeholder="选择日期时间"
+            default-time="12:00:00"
+          ></el-date-picker>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="addToolCost()">确 定</el-button>
+      </span>
+    </el-dialog>
     <!-- 修改工具花费金额 -->
     <el-dialog title="修改工具花费金额" :visible.sync="editDialogVisible" width="30%">
-      <el-input v-model="editFrom.toolCost" type="number"></el-input>
+      <el-input v-model="editFrom.toolCost" type="number" placeholder="请输入花费金额"></el-input>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="editToolCost()">确 定</el-button>
@@ -78,6 +103,37 @@
 export default {
   data() {
     return {
+      addDialogVisible: false,
+      userList: [],
+      addFrom: {
+        userId: '',
+        toolId: '',
+        toolCost: '',
+        cerateTime: ''
+      },
+      addFromRules: {
+        userId: [
+          { required: true, message: '请选择归属人员', trigger: 'change' }
+        ],
+        toolId: [
+          { required: true, message: '请选择花费类目', trigger: 'change' }
+        ],
+        toolCost: [
+          {
+            required: true,
+            message: '请输入花费金额',
+            trigger: 'blur'
+          }
+        ],
+        cerateTime: [
+          {
+            type: 'datetime',
+            required: true,
+            message: '请选择日期时间',
+            trigger: 'change'
+          }
+        ]
+      },
       toolCost: '',
       toolId: '',
       toolList: [],
@@ -92,13 +148,22 @@ export default {
     }
   },
   created() {
-    this.getTools()
-    this.getToolCostList()
     this.roleId = JSON.parse(
       unescape(window.sessionStorage.getItem('data'))
     ).roleId
+    this.getTools()
+    this.getToolCostList()
+    this.getUserList()
   },
   methods: {
+    /*** 获取人员信息 ***/
+    async getUserList() {
+      const { data: res } = await this.$http.get('/api/regular/getUserList')
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
+      this.userList = res.data
+    },
     /*** 获取工具类目 ***/
     async getTools() {
       const { data: res } = await this.$http.get('/api/regular/getTools')
@@ -108,23 +173,27 @@ export default {
       this.toolList = res.data
     },
     /*** 添加工具类花费 ***/
-    async addToolCost() {
-      if (this.toolId === '') {
-        return this.$message.error('请选择工具类目')
-      }
-      if (this.toolCost === '') {
-        return this.$message.error('请选择工具类花费金额')
-      }
-      const { data: res } = await this.$http.post('/api/regular/addToolCost', {
-        toolId: this.toolId,
-        toolCost: this.toolCost
+    addToolCost() {
+      this.$refs.addFromRef.validate(async valid => {
+        if (!valid) return
+        this.addFrom.cerateTime = parseInt(
+          this.addFrom.cerateTime.getTime() / 1000
+        )
+        const { data: res } = await this.$http.post(
+          '/api/regular/addToolCost',
+          this.addFrom
+        )
+        if (res.meta.status !== 200) {
+          return this.$message.error(res.meta.msg)
+        }
+        this.addDialogVisible = false
+        this.$message.success(res.meta.msg)
+        this.getToolCostList()
       })
-      if (res.meta.status !== 200) {
-        return this.$message.error(res.meta.msg)
-      }
-      this.$message.success(res.meta.msg)
-      this.getToolCostList()
-      this.toolCost = ''
+    },
+    /*** 添加工具花费对话框 - 监听关闭事件 ***/
+    addDialogClose() {
+      this.$refs.addFromRef.resetFields()
     },
     /*** 获取工具花费列表***/
     async getToolCostList() {

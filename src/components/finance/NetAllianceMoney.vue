@@ -7,29 +7,14 @@
     </el-breadcrumb>
     <el-alert title="注意网盟汇款费用的币种为美元！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-row :gutter="20">
-        <el-col :span="10">
-          <el-input placeholder="请输入汇款金额" v-model="remitMoney" type="number">
-            <el-select slot="prepend" v-model="naId" placeholder="请选择网盟">
-              <el-option
-                v-for="item in NetAllianceList"
-                :key="item.id"
-                :label="item.naName"
-                :value="item.id"
-              ></el-option>
-            </el-select>
-          </el-input>
-        </el-col>
-        <el-col :span="4">
-          <el-button type="success" @click="addNaMoney()">添加网盟汇款</el-button>
-        </el-col>
-      </el-row>
+      <el-button type="success" @click="showAddNaMoneyDialogVisible()">添加网盟汇款</el-button>
       <el-table :data="naMoneyList" border>
         <el-table-column label="ID" prop="id" width="100px"></el-table-column>
         <el-table-column label="网盟" prop="naName"></el-table-column>
         <el-table-column label="汇款(USD)">
           <template slot-scope="scope">{{ scope.row.remitMoney | money }}</template>
         </el-table-column>
+        <el-table-column label="归属人员" prop="name"></el-table-column>
         <el-table-column label="时间" width="160px">
           <template slot-scope="scope">{{ scope.row.cerateTime | dataFormat }}</template>
         </el-table-column>
@@ -67,6 +52,46 @@
         </el-col>
       </el-row>
     </el-card>
+    <!--添加网盟汇款对话框-->
+    <el-dialog
+      title="添加网盟汇款(USD)"
+      :visible.sync="addNaMoneyDialogVisible"
+      width="55%"
+      @close="addNaDialogClose()"
+    >
+      <el-form :model="addNaForm" :rules="addNaRules" ref="addNaRef" label-width="120px">
+        <el-form-item label="归属人员" prop="userId">
+          <el-select placeholder="请选择归属人员" v-model="addNaForm.userId">
+            <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="网盟" prop="naId">
+          <el-select v-model="addNaForm.naId" placeholder="请选择网盟">
+            <el-option
+              v-for="item in NetAllianceList"
+              :key="item.id"
+              :label="item.naName"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="汇款金额(USD)" prop="remitMoney">
+          <el-input v-model="addNaForm.remitMoney"></el-input>
+        </el-form-item>
+        <el-form-item label="时间" prop="cerateTime" placeholder="请输入日期时间">
+          <el-date-picker
+            v-model="addNaForm.cerateTime"
+            type="datetime"
+            placeholder="选择日期时间"
+            default-time="12:00:00"
+          ></el-date-picker>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addNaMoneyDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="addNaMoney()">确 定</el-button>
+      </span>
+    </el-dialog>
     <!-- 修改网盟汇款对话框 -->
     <el-dialog title="修改汇款金额(USD)" :visible.sync="editNaMoneyDialogVisible" width="50%">
       <el-input v-model="editNaMoney.remitMoney"></el-input>
@@ -82,9 +107,32 @@
 export default {
   data() {
     return {
+      addNaMoneyDialogVisible: false,
+      userList: [],
+      addNaForm: {
+        remitMoney: '',
+        naId: '',
+        userId: '',
+        cerateTime: ''
+      },
+      addNaRules: {
+        userId: [
+          { required: true, message: '请选择归属人员', trigger: 'change' }
+        ],
+        naId: [{ required: true, message: '请选择网盟', trigger: 'change' }],
+        remitMoney: [
+          { required: true, message: '请输入汇款金额', trigger: 'blur' }
+        ],
+        cerateTime: [
+          {
+            type: 'date',
+            required: true,
+            message: '请选择日期时间',
+            trigger: 'change'
+          }
+        ]
+      },
       NetAllianceList: [],
-      remitMoney: '',
-      naId: '',
       pagerCount: 5,
       currentPage: 1,
       pageSize: 50,
@@ -99,10 +147,22 @@ export default {
     this.roleId = JSON.parse(
       unescape(window.sessionStorage.getItem('data'))
     ).roleId
-    this.getNetAllianceList()
     this.getNaMoneyList()
   },
   methods: {
+    showAddNaMoneyDialogVisible() {
+      this.getUserList()
+      this.getNetAllianceList()
+      this.addNaMoneyDialogVisible = true
+    },
+    /*** 获取人员信息 ***/
+    async getUserList() {
+      const { data: res } = await this.$http.get('/api/regular/getUserList')
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
+      this.userList = res.data
+    },
     /*** 获取网盟列表 ***/
     async getNetAllianceList() {
       const { data: res } = await this.$http.get('/api/regular/getNetAlliance')
@@ -111,24 +171,28 @@ export default {
       }
       this.NetAllianceList = res.data
     },
+    /*** 添加网盟汇款对话框 - 监听关闭事件 ***/
+    addNaDialogClose() {
+      this.$refs.addNaRef.resetFields()
+    },
     /*** 添加网盟汇款 ***/
-    async addNaMoney() {
-      if (this.remitMoney === '') {
-        return this.$message.error('请输入网盟汇款金额！')
-      }
-      if (this.naId === '') {
-        return this.$message.error('请选择网盟！')
-      }
-      const { data: res } = await this.$http.post('/api/regular/addNaMoney', {
-        remitMoney: this.remitMoney,
-        naId: this.naId
+    addNaMoney() {
+      this.$refs.addNaRef.validate(async valid => {
+        if (!valid) return
+        this.addNaForm.cerateTime = parseInt(
+          this.addNaForm.cerateTime.getTime() / 1000
+        )
+        const { data: res } = await this.$http.post(
+          '/api/regular/addNaMoney',
+          this.addNaForm
+        )
+        if (res.meta.status !== 200) {
+          return this.$message.error(res.meta.msg)
+        }
+        this.addNaMoneyDialogVisible = false
+        this.$message.success(res.meta.msg)
+        this.getNaMoneyList()
       })
-      if (res.meta.status !== 200) {
-        return this.$message.error(res.meta.msg)
-      }
-      this.$message.success(res.meta.msg)
-      this.getNaMoneyList()
-      this.remitMoney = ''
     },
     /*** 获取网盟汇款表 ***/
     async getNaMoneyList() {
@@ -147,7 +211,10 @@ export default {
     },
     /*** 打开修改网盟对话框 ***/
     async showEditNaMoneyDialogVisible(id) {
-      const { data: res } = await this.$http.post('/api/regular/getNaMoneyById', { id: id })
+      const { data: res } = await this.$http.post(
+        '/api/regular/getNaMoneyById',
+        { id: id }
+      )
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
       }
@@ -156,9 +223,16 @@ export default {
     },
     /*** 修改网盟汇款金额 ***/
     async saveNaMoney() {
-      if (this.editNaMoney.remitMoney === '') { return this.$message.error('汇款金额不能为空') }
-      const { data: res } = await this.$http.post('/api/regular/saveNaMoney', this.editNaMoney)
-      if (res.meta.status !== 200) { return this.$message.error(res.meta.msg) }
+      if (this.editNaMoney.remitMoney === '') {
+        return this.$message.error('汇款金额不能为空')
+      }
+      const { data: res } = await this.$http.post(
+        '/api/regular/saveNaMoney',
+        this.editNaMoney
+      )
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
       this.$message.success(res.meta.msg)
       this.editNaMoneyDialogVisible = false
       this.getNaMoneyList()
@@ -177,8 +251,13 @@ export default {
       if (confirmResult !== 'confirm') {
         return this.$message.info('已取消删除操作')
       }
-      const { data: res } = await this.$http.post('/api/regular/removeNaMoney', { id: id })
-      if (res.meta.status !== 200) { return this.$message.error(res.meta.msg) }
+      const { data: res } = await this.$http.post(
+        '/api/regular/removeNaMoney',
+        { id: id }
+      )
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
       this.$message.success(res.meta.msg)
       this.getNaMoneyList()
     },

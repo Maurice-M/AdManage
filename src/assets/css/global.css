@@ -6,6 +6,26 @@ body,
     padding: 0;
     min-width: 1200px;
 }
+.el-header{
+    position: relative;
+    width: 100%;
+    height: 60px;
+}
+.el-aside{
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 60px;
+    bottom: 0;
+}
+.el-main{
+    position: absolute;
+    right: 0;
+    top: 60px;
+    bottom: 0;
+    overflow: scroll;
+}
+
 .el-breadcrumb{
     margin-bottom: 15px;
     font-size: 12px;

@@ -1,0 +1,20 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "file-saver": "^2.0.2",
+    "xlsx": "^0.16.1"
+  },
+  "devDependencies": {
+    "script-loader": "^0.7.2"
+  }
+}

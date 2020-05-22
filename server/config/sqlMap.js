@@ -35,9 +35,9 @@ var sqlMap = {
         removeTool: 'delete from tools where id = ?',
         editTool: 'update tools set toolName = ? where id = ?',
         getTools: 'select * from tools',
-        addToolCost: 'insert into toolcost (toolId, toolCost, cerateTime) values (?, ?, ?)',
+        addToolCost: 'insert into toolcost (userId, toolId, toolCost, cerateTime) values (?, ?, ?, ?)',
         getToolCostTotal: 'select count(*) from toolcost',
-        getToolCostList: 'select toolcost.*,tools.toolName from toolcost,tools where toolcost.toolId = tools.id ORDER BY toolcost.id DESC LIMIT ? , ?',
+        getToolCostList: 'select toolcost.*,tools.toolName,users.name from toolcost,tools,users where toolcost.toolId = tools.id and toolcost.userId = users.id ORDER BY toolcost.id DESC LIMIT ? , ?',
         removeToolCost: 'delete from toolcost where id = ?',
         getToolCostById: 'select id,toolCost from toolcost where id = ?',
         editToolCost: 'update toolcost set toolCost = ? where id = ?',
@@ -58,9 +58,9 @@ var sqlMap = {
         getNetAlliances: 'select * from netalliances ORDER BY id DESC LIMIT ? , ?',
         removeNa: 'delete from netalliances where id = ?',
         getNetAlliance: 'select * from netalliances',
-        addNaMoney: 'insert into netalliancemoney (naId, remitMoney, cerateTime) values (?, ?, ?)',
+        addNaMoney: 'insert into netalliancemoney (userId, naId, remitMoney, cerateTime) values (?, ?, ?, ?)',
         getNaMoneyTotal: 'select count(*) from netalliancemoney',
-        getNaMoneyList: 'select netalliancemoney.*,netalliances.naName from netalliancemoney,netalliances where netalliancemoney.naId = netalliances.id ORDER BY netalliancemoney.id DESC LIMIT ? , ?',
+        getNaMoneyList: 'select netalliancemoney.*,netalliances.naName,users.name from netalliancemoney,netalliances,users where netalliancemoney.naId = netalliances.id and netalliancemoney.userId = users.id ORDER BY netalliancemoney.id DESC LIMIT ? , ?',
         getNaMoneyById: 'select id,remitMoney from netalliancemoney where id = ?',
         saveNaMoney: 'update netalliancemoney set remitMoney = ? where id = ?',
         removeNaMoney: 'delete from netalliancemoney where id = ?',
@@ -73,7 +73,50 @@ var sqlMap = {
         addCommission: 'insert into commission (userId, commission, month, cerateTime) values (?, ?, ?, ?)',
         getCommissionTotal: 'select count(*) from commission',
         getCommissionList: 'select commission.*,users.name from commission,users where commission.userId = users.id ORDER BY commission.id DESC LIMIT ? , ?',
-        removeCommission: 'delete from commission where id = ?'
+        removeCommission: 'delete from commission where id = ?',
+        addExchage: 'insert into exchange (RMB_USD, USD_RMB, month, cerateTime) values (?, ?, ?, ?)',
+        getExchangeList: 'select * from exchange ORDER BY id DESC',
+        removeExchange: 'delete from exchange where id = ?',
+        addPublic: 'insert into public (naId, publicMoney, msg, cerateTime) values (?, ?, ?, ?)',
+        getPublicTotal: 'select count(*) from public',
+        getPublicList: 'select public.*,netalliances.naName from public,netalliances where public.naId = netalliances.id ORDER BY public.id DESC LIMIT ? , ?',
+        getPublicById: 'select * from public where id = ?',
+        saveEditPublic: 'update public set naId = ?, publicMoney = ?, msg = ? where id = ?',
+        removePublic: 'delete from public where id = ?',
+        getProfitToolCost: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(toolCost) as toolCost,(select RMB_USD FROM exchange WHERE FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(month,'%Y-%m'))AS RMB_USD FROM toolcost WHERE FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getProfitNaMoney: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(remitMoney) as remitMoney FROM netalliancemoney WHERE FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getProfitpublicMoney: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(publicMoney) as publicMoney FROM public WHERE FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getProfitAdCost: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(accountCost+adCost*(1+formalities)) as adCost FROM adcost WHERE FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        addTransform: 'insert into transform (userId, number, cerateTime) values (?, ?, ?)',
+        getTransformTotal: 'select count(*) from transform',
+        getTransformList: 'select transform.*,users.name from transform,users where transform.userId = users.id ORDER BY transform.id DESC LIMIT ? , ?',
+        removeTransform: 'delete from transform where id = ?',
+        getRoiAdCost: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(accountCost+adCost*(1+formalities)) as adCost FROM adcost WHERE userId = ? and FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getRoiAccountCost:`SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(accountCost) as accountCost FROM accountcost WHERE userId = ? and FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getRoiNumber: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(number) as number FROM transform WHERE userId = ? and FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getRoiNaMoney: `SELECT FROM_UNIXTIME(cerateTime,'%d') as date,sum(remitMoney) as NaMoney FROM netalliancemoney WHERE userId = ? and FROM_UNIXTIME(?,'%Y-%m') = FROM_UNIXTIME(cerateTime,'%Y-%m') GROUP BY date`,
+        getPayList:`         
+SELECT
+    u.name,
+    u.price,
+    c.commission,
+    e.RMB_USD,
+    e.USD_RMB,
+    (SELECT SUM(m.remitMoney) FROM netalliancemoney m where m.cerateTime >= ? AND m.cerateTime <= ?) AS remitMoneyTotal,
+    (SELECT SUM(s.cost) FROM spendday s where s.cerateTime >= ? AND s.cerateTime <= ?) AS costTotal,
+    (SELECT SUM(t.toolCost) FROM toolcost t where t.cerateTime >= ? AND t.cerateTime <= ?) AS toolCostTotal,
+    (SELECT SUM(ad.accountCost + ad.adCost *(1 + ad.formalities)) as adTotal FROM adcost ad where ad.cerateTime >= ? AND ad.cerateTime <= ?) AS adTotal,
+    (SELECT SUM(d.price) FROM domains d where d.cerateTime >= ? AND d.cerateTime <= ?) AS domainTotal
+FROM 
+    users u,
+    commission c,
+    exchange e
+WHERE 
+    u.roleId = 4 
+    AND c.userId = u.id 
+    AND c.month = ? 
+    AND e.month = ?
+        `,
 
 
 

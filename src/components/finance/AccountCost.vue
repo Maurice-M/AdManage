@@ -3,14 +3,14 @@
     <el-breadcrumb separator-class="el-icon-arrow-right">
       <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
       <el-breadcrumb-item>财务管理</el-breadcrumb-item>
-      <el-breadcrumb-item>账户花费列表</el-breadcrumb-item>
+      <el-breadcrumb-item>FB账户使用列表</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-alert title="注意账户花费的币种为美元！！！" type="warning" show-icon></el-alert>
+    <el-alert title="注意FB账户使用列表的币种为美元！！！" type="warning" show-icon></el-alert>
     <el-card>
       <el-button type="success" @click="showAddAccountCostDialogVisible()">账户花费</el-button>
       <el-table :data="accountCostList" border>
         <el-table-column label="ID" prop="id" width="80px"></el-table-column>
-        <el-table-column label="开户费(USD)" width="150px">
+        <el-table-column label="费用(USD)" width="150px">
           <template slot-scope="scope">{{ scope.row.accountCost | money }}</template>
         </el-table-column>
         <el-table-column label="备注" prop="msg"></el-table-column>
@@ -54,7 +54,7 @@
     </el-card>
     <!-- 添加账户花费对话框 -->
     <el-dialog
-      title="添加账户花费"
+      title="添加FB账户使用列表"
       :visible.sync="addAccountCostDialogVisible"
       @close="addAccountCostDialogClose()"
       width="50%"
@@ -70,11 +70,19 @@
             <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="花费(USD)" prop="accountCost">
+        <el-form-item label="费用(USD)" prop="accountCost">
           <el-input v-model="addAccountCostForm.accountCost" type="number"></el-input>
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="addAccountCostForm.msg"></el-input>
+        </el-form-item>
+        <el-form-item label="时间" prop="cerateTime" placeholder="请输入日期时间">
+          <el-date-picker
+            v-model="addAccountCostForm.cerateTime"
+            type="datetime"
+            placeholder="选择日期时间"
+            default-time="12:00:00"
+          ></el-date-picker>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -82,8 +90,8 @@
         <el-button type="primary" @click="addAccountCost()">确 定</el-button>
       </span>
     </el-dialog>
-    <!-- 修改账户花费对话框 -->
-    <el-dialog title="添加账户花费" :visible.sync="editAccountCostDialogVisible" width="50%">
+    <!-- 修改FB账户使用对话框 -->
+    <el-dialog title="添加FB账户使用列表" :visible.sync="editAccountCostDialogVisible" width="50%">
       <el-form
         :model="editAccountCostForm"
         :rules="editAccountCostFormRules"
@@ -93,7 +101,7 @@
         <el-form-item label="ID">
           <el-input v-model="editAccountCostForm.id" disabled></el-input>
         </el-form-item>
-        <el-form-item label="账户花费(USD)">
+        <el-form-item label="费用(USD)">
           <el-input v-model="editAccountCostForm.accountCost" type="number"></el-input>
         </el-form-item>
         <el-form-item label="备注">
@@ -120,13 +128,22 @@ export default {
       addAccountCostForm: {
         userId: '',
         accountCost: '',
-        msg: ''
+        msg: '',
+        cerateTime: ''
       },
       addAccountCostFormRules: {
         userId: [
           { required: true, message: '请选择归属人员', trigger: 'change' }
         ],
-        accountCost: [{ required: true, message: '请输入账户费', trigger: 'blur' }]
+        accountCost: [{ required: true, message: '请输入账花费', trigger: 'blur' }],
+        cerateTime: [
+          {
+            type: 'date',
+            required: true,
+            message: '请选择日期时间',
+            trigger: 'change'
+          }
+        ]
       },
       accountCostList: [],
       pagerCount: 5,
@@ -136,7 +153,7 @@ export default {
       roleId: 0,
       editAccountCostForm: {},
       editAccountCostFormRules: {
-        accountCost: [{ required: true, message: '请输入账户花费', trigger: 'blur' }]
+        accountCost: [{ required: true, message: '请输入花费', trigger: 'blur' }]
       }
     }
   },
@@ -168,6 +185,7 @@ export default {
     addAccountCost() {
       this.$refs.addAccountCostFormRef.validate(async valid => {
         if (!valid) return
+        this.addAccountCostForm.cerateTime = parseInt(this.addAccountCostForm.cerateTime.getTime() / 1000)
         const { data: res } = await this.$http.post(
           '/api/regular/addAccountCost',
           this.addAccountCostForm
@@ -196,8 +214,8 @@ export default {
     /*** 删除账户花费 ***/
     async removeAccountCost(id) {
       const confirmResult = await this.$confirm(
-        '此操作将永久删除该账户花费, 是否继续?',
-        '删除账户花费',
+        '此操作将永久删除该Multilogin花费, 是否继续?',
+        '删除Multilogin花费',
         {
           confirmButtonText: '确定',
           cancelButtonText: '取消',

@@ -43,7 +43,7 @@
           </el-submenu>
         </el-menu>
       </el-aside>
-      <el-main>
+      <el-main :style="{left : isCollapse ? '64px' : '200px'}">
         <router-view></router-view>
       </el-main>
     </el-container>

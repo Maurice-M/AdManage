@@ -21,7 +21,7 @@
         <el-table-column label="总费用费(USD)" v-if="roleId === 1 || roleId === 2">
           <template
             slot-scope="scope"
-          >{{ scope.row.accountCost + scope.row.adCost + (scope.row.adCost * scope.row.formalities) | money }}</template>
+          >{{ scope.row.accountCost + scope.row.adCost * (1 + scope.row.formalities) | money }}</template>
         </el-table-column>
         <el-table-column label="归属人员" prop="name" width="100px"></el-table-column>
         <el-table-column label="时间" prop="cerateTime" width="165px">
@@ -84,14 +84,22 @@
             <el-option v-for="item in adList" :key="item.id" :label="item.adName" :value="item.id"></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="开户费(USD)">
-          <el-input v-model="addAdCostForm.accountCost" type="number"></el-input>
+        <el-form-item label="开户费(USD)" prop="accountCost">
+          <el-input v-model="addAdCostForm.accountCost" placeholder="请输入开户费" type="number"></el-input>
         </el-form-item>
         <el-form-item label="广告费(USD)" prop="adCost">
-          <el-input v-model="addAdCostForm.adCost" type="number"></el-input>
+          <el-input v-model="addAdCostForm.adCost" placeholder="请输入广告费" type="number"></el-input>
         </el-form-item>
         <el-form-item label="手续费(USD)" prop="formalities">
-          <el-input v-model="addAdCostForm.formalities" type="number"></el-input>
+          <el-input v-model="addAdCostForm.formalities" placeholder="请输入百分比手续费" type="number"></el-input>
+        </el-form-item>
+        <el-form-item label="时间" prop="cerateTime" placeholder="请输入日期时间">
+          <el-date-picker
+            v-model="addAdCostForm.cerateTime"
+            type="datetime"
+            placeholder="选择日期时间"
+            default-time="12:00:00"
+          ></el-date-picker>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -116,9 +124,6 @@
         <el-form-item label="广告费(USD)" prop="adCost">
           <el-input v-model="editAdCostForm.adCost" type="number"></el-input>
         </el-form-item>
-        <el-form-item label="手续费(USD)" prop="formalities">
-          <el-input v-model="editAdCostForm.formalities" type="number"></el-input>
-        </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editAdCostDialogVisible = false">取 消</el-button>
@@ -141,16 +146,26 @@ export default {
         adId: '',
         accountCost: '',
         adCost: '',
-        formalities: ''
+        formalities: '',
+        cerateTime: ''
       },
       addAdCostFormRules: {
         userId: [
           { required: true, message: '请选择归属人员', trigger: 'change' }
         ],
         adId: [{ required: true, message: '请选择广告商', trigger: 'change' }],
+        accountCost: [{ required: true, message: '请输入开户费', trigger: 'blur' }],
         adCost: [{ required: true, message: '请输入广告费', trigger: 'blur' }],
         formalities: [
-          { required: true, message: '请输入手续费', trigger: 'blur' }
+          { required: true, message: '请输入手续费百分比', trigger: 'blur' }
+        ],
+        cerateTime: [
+          {
+            type: 'date',
+            required: true,
+            message: '请选择日期时间',
+            trigger: 'change'
+          }
         ]
       },
       adCostList: [],
@@ -205,6 +220,7 @@ export default {
     addAdCost() {
       this.$refs.addAdCostFormRef.validate(async valid => {
         if (!valid) return
+        this.addAdCostForm.cerateTime = parseInt(this.addAdCostForm.cerateTime.getTime() / 1000)
         const { data: res } = await this.$http.post(
           '/api/regular/addAdCost',
           this.addAdCostForm

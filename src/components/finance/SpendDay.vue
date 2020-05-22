@@ -20,6 +20,15 @@
             </el-select>
           </el-input>
         </el-col>
+        <el-col :span="7">
+          <el-date-picker
+            style="width:100%"
+            v-model="cerateTime"
+            type="datetime"
+            placeholder="选择日期时间"
+            default-time="12:00:00"
+          ></el-date-picker>
+        </el-col>
         <el-col :span="4">
           <el-button type="success" @click="addSpendDay()">添加日常花费</el-button>
         </el-col>
@@ -81,6 +90,7 @@ export default {
       regularList: [],
       regId: '',
       cost: '',
+      cerateTime: '',
       spendDayList: [],
       pagerCount: 5,
       currentPage: 1,
@@ -109,6 +119,9 @@ export default {
     },
     /*** 添加日常花费 ***/
     async addSpendDay() {
+      if (this.cerateTime === '') {
+        return this.$message.error('请选择日期时间！')
+      }
       if (this.regId === '') {
         return this.$message.error('请选择花费类目！')
       }
@@ -117,7 +130,8 @@ export default {
       }
       const { data: res } = await this.$http.post('/api/regular/addSpendDay', {
         regId: this.regId,
-        cost: this.cost
+        cost: this.cost,
+        cerateTime: parseInt(this.cerateTime.getTime() / 1000)
       })
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
@@ -125,6 +139,7 @@ export default {
       this.$message.success(res.meta.msg)
       this.getSpendDayList()
       this.cost = ''
+      this.cerateTime = ''
     },
     /*** 获取日常花费 ***/
     async getSpendDayList() {
@@ -169,7 +184,9 @@ export default {
     },
     /*** 打开修改日常花费金额对话框***/
     async showEditDialogVisible(id) {
-      const { data: res } = await this.$http.post('/api/regular/getSpendDayById', { id: id })
+      const {
+        data: res
+      } = await this.$http.post('/api/regular/getSpendDayById', { id: id })
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
       }

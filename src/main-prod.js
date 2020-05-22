@@ -1,16 +1,24 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
-import './plugins/element.js'
 import './assets/css/global.css'
+import NProgress from 'nprogress'
+import moment from 'moment'
 import axios from 'axios'
 
+/** 拦截器 **/
 axios.interceptors.request.use(config => {
+  NProgress.start()
   config.headers.Authorization = window.sessionStorage.getItem('token')
+  return config
+})
+axios.interceptors.response.use(config => {
+  NProgress.done()
   return config
 })
 
 Vue.prototype.$http = axios
+Vue.prototype.$moment = moment
 Vue.config.productionTip = false
 
 Vue.filter('dataFormat', function (originVal) {
