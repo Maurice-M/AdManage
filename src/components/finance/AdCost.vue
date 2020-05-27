@@ -7,7 +7,38 @@
     </el-breadcrumb>
     <el-alert title="注意广告费用请输入币种为美元！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-button type="success" @click="showAddAdCostDialogVisible()">添加广告花费</el-button>
+      <el-row :gutter="10">
+        <el-col :span="4">
+          <el-select style="width:100%" v-model="seachAdId" placeholder="请选择类目">
+            <el-option v-for="item in adList" :key="item.id" :label="item.adName" :value="item.id"></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="4">
+          <el-select style="width:100%" v-model="seachUserId" placeholder="请选择人员">
+            <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachStartTime"
+            type="datetime"
+            placeholder="选择起始时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachEndTime"
+            type="datetime"
+            placeholder="选择终止时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" @click="seachAdCost()">查询</el-button>
+          <el-button type="primary" @click="showAddAdCostDialogVisible()">添加广告花费</el-button>
+        </el-col>
+      </el-row>
       <el-table :data="adCostList" border>
         <el-table-column label="ID" prop="id" width="80px"></el-table-column>
         <el-table-column label="广告商" prop="adName" width="160px"></el-table-column>
@@ -19,9 +50,7 @@
         </el-table-column>
         <el-table-column label="手续费(USD)" prop="formalities" v-if="roleId === 1 || roleId === 2"></el-table-column>
         <el-table-column label="总费用费(USD)" v-if="roleId === 1 || roleId === 2">
-          <template
-            slot-scope="scope"
-          >{{ scope.row.accountCost + scope.row.adCost * (1 + scope.row.formalities) | money }}</template>
+          <template slot-scope="scope">{{ scope.row.total | money }}</template>
         </el-table-column>
         <el-table-column label="归属人员" prop="name" width="100px"></el-table-column>
         <el-table-column label="时间" prop="cerateTime" width="165px">
@@ -113,7 +142,7 @@
         :model="editAdCostForm"
         :rules="editAdCostFormRules"
         ref="editAdCostFormRef"
-        label-width="100px"
+        label-width="120px"
       >
         <el-form-item label="ID">
           <el-input v-model="editAdCostForm.id" disabled></el-input>
@@ -123,6 +152,9 @@
         </el-form-item>
         <el-form-item label="广告费(USD)" prop="adCost">
           <el-input v-model="editAdCostForm.adCost" type="number"></el-input>
+        </el-form-item>
+        <el-form-item label="手续费(USD)" prop="formalities">
+          <el-input v-model="editAdCostForm.formalities" placeholder="请输入百分比手续费" type="number"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -154,7 +186,9 @@ export default {
           { required: true, message: '请选择归属人员', trigger: 'change' }
         ],
         adId: [{ required: true, message: '请选择广告商', trigger: 'change' }],
-        accountCost: [{ required: true, message: '请输入开户费', trigger: 'blur' }],
+        accountCost: [
+          { required: true, message: '请输入开户费', trigger: 'blur' }
+        ],
         adCost: [{ required: true, message: '请输入广告费', trigger: 'blur' }],
         formalities: [
           { required: true, message: '请输入手续费百分比', trigger: 'blur' }
@@ -180,7 +214,11 @@ export default {
         formalities: [
           { required: true, message: '请输入手续费', trigger: 'blur' }
         ]
-      }
+      },
+      seachAdId: '',
+      seachUserId: '',
+      seachStartTime: '',
+      seachEndTime: ''
     }
   },
   created() {
@@ -188,6 +226,8 @@ export default {
       unescape(window.sessionStorage.getItem('data'))
     ).roleId
     this.getAdCostList()
+    this.getAdList()
+    this.getUserList()
   },
   methods: {
     /*** 添加广告花费对话框 - 监听关闭事件 ***/
@@ -220,7 +260,9 @@ export default {
     addAdCost() {
       this.$refs.addAdCostFormRef.validate(async valid => {
         if (!valid) return
-        this.addAdCostForm.cerateTime = parseInt(this.addAdCostForm.cerateTime.getTime() / 1000)
+        this.addAdCostForm.cerateTime = parseInt(
+          this.addAdCostForm.cerateTime.getTime() / 1000
+        )
         const { data: res } = await this.$http.post(
           '/api/regular/addAdCost',
           this.addAdCostForm
@@ -300,6 +342,22 @@ export default {
     paginationChange(newCurrentPage) {
       this.currentPage = newCurrentPage
       this.getAdCostList()
+    },
+    async seachAdCost() {
+      if (this.seachStartTime === '' || this.seachEndTime === '') {
+        return this.$message.error('查询时间不能为空')
+      }
+      const { data: res } = await this.$http.post('/api/regular/seachAdCost', {
+        seachAdId: this.seachAdId,
+        seachUserId: this.seachUserId,
+        seachStartTime: parseInt(this.seachStartTime.getTime() / 1000),
+        seachEndTime: parseInt(this.seachEndTime.getTime() / 1000)
+      })
+      this.total = ''
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
+      this.adCostList = res.data
     }
   }
 }

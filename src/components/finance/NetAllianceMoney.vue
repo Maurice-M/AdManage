@@ -3,11 +3,47 @@
     <el-breadcrumb separator-class="el-icon-arrow-right">
       <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
       <el-breadcrumb-item>财务管理</el-breadcrumb-item>
-      <el-breadcrumb-item>网盟汇款列表</el-breadcrumb-item>
+      <el-breadcrumb-item>网盟收入列表</el-breadcrumb-item>
     </el-breadcrumb>
     <el-alert title="注意网盟汇款费用的币种为美元！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-button type="success" @click="showAddNaMoneyDialogVisible()">添加网盟汇款</el-button>
+      <el-row :gutter="10">
+        <el-col :span="4">
+          <el-select style="width:150px" v-model="seachNaId" placeholder="请选择广告商">
+            <el-option
+              v-for="item in NetAllianceList"
+              :key="item.id"
+              :label="item.naName"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="4">
+          <el-select style="width:150px" v-model="seachUserId" placeholder="请选择人员">
+            <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachStartTime"
+            type="datetime"
+            placeholder="选择起始时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachEndTime"
+            type="datetime"
+            placeholder="选择终止时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" @click="seachNamoney()">查询</el-button>
+          <el-button type="primary" @click="showAddNaMoneyDialogVisible()">添加网盟收入</el-button>
+        </el-col>
+      </el-row>
       <el-table :data="naMoneyList" border>
         <el-table-column label="ID" prop="id" width="100px"></el-table-column>
         <el-table-column label="网盟" prop="naName"></el-table-column>
@@ -140,7 +176,11 @@ export default {
       naMoneyList: [],
       roleId: 0,
       editNaMoneyDialogVisible: false,
-      editNaMoney: {}
+      editNaMoney: {},
+      seachNaId: '',
+      seachUserId: '',
+      seachStartTime: '',
+      seachEndTime: ''
     }
   },
   created() {
@@ -148,6 +188,8 @@ export default {
       unescape(window.sessionStorage.getItem('data'))
     ).roleId
     this.getNaMoneyList()
+    this.getUserList()
+    this.getNetAllianceList()
   },
   methods: {
     showAddNaMoneyDialogVisible() {
@@ -264,6 +306,26 @@ export default {
     paginationChange(newCurrentPage) {
       this.currentPage = newCurrentPage
       this.getNaMoneyList()
+    },
+    /*** 查询 ***/
+    async seachNamoney() {
+      if (this.seachStartTime === '' || this.seachEndTime === '') {
+        return this.$message.error('请选择查询时间段')
+      }
+      this.total = ''
+      const { data: res } = await this.$http.post('api/regular/seachNamoney', {
+        seachNaId: this.seachNaId,
+        seachUserId: this.seachUserId,
+        seachStartTime: parseInt(this.seachStartTime.getTime() / 1000),
+        seachEndTime: parseInt(this.seachEndTime.getTime() / 1000)
+      })
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
+      this.$message.success(res.meta.msg)
+      this.seachUserId = ''
+      this.seachNaId = ''
+      this.naMoneyList = res.data
     }
   }
 }

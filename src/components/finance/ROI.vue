@@ -104,7 +104,7 @@ export default {
           'adCost',
           'accountCost',
           'number',
-          'profit',
+          'NaMoney',
           'profit',
           'ROI'
         ]

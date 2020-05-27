@@ -8,8 +8,8 @@
     <el-card>
       <el-button type="success" @click="addUserDialogVisible = true">添加用户</el-button>
       <el-table border :data="userList">
-        <el-table-column label="#" type="index"></el-table-column>
-        <el-table-column label="姓名" prop="name" width="80px"></el-table-column>
+        <el-table-column label="ID" prop="id" width="80px"></el-table-column>
+        <el-table-column label="姓名" prop="name" width="120px"></el-table-column>
         <el-table-column label="邮箱" prop="email"></el-table-column>
         <el-table-column label="电话" prop="iphone"></el-table-column>
         <el-table-column label="状态" width="65px">

@@ -23,10 +23,14 @@ const AccountCost = () => import(/* webpackchunkName: "finance" */ '../component
 const Commission = () => import(/* webpackchunkName: "finance" */ '../components/finance/Commission.vue')
 const Exchange = () => import(/* webpackchunkName: "finance" */ '../components/finance/Exchange.vue')
 const Public = () => import(/* webpackchunkName: "finance" */ '../components/finance/Public.vue')
-const Pay = () => import(/* webpackchunkName: "finance" */ '../components/finance/Pay.vue')
 const ProfitList = () => import(/* webpackchunkName: "finance" */ '../components/finance/ProfitList.vue')
 const Transform = () => import(/* webpackchunkName: "finance" */ '../components/finance/Transform.vue')
 const ROI = () => import(/* webpackchunkName: "finance" */ '../components/finance/ROI.vue')
+const AdRevenue = () => import(/* webpackchunkName: "finance" */ '../components/finance/AdRevenue.vue')
+const MergeProfit = () => import(/* webpackchunkName: "finance" */ '../components/finance/MergeProfit.vue')
+const Pay = () => import(/* webpackchunkName: "finance" */ '../components/finance/Pay.vue')
+const RechargeRecord = () => import(/* webpackchunkName: "finance" */ '../components/finance/RechargeRecord.vue')
+
 /*** 域名管理 ***/
 const Domains = () => import(/* webpackchunkName: "Domains" */ '../components/domain/Domains.vue')
 Vue.use(VueRouter)
@@ -56,10 +60,13 @@ const routes = [
       { path: '/commission', component: Commission },
       { path: '/exchange', component: Exchange },
       { path: '/public', component: Public },
-      { path: '/pay', component: Pay },
       { path: '/profitList', component: ProfitList },
       { path: '/transform', component: Transform },
       { path: '/roi', component: ROI },
+      { path: '/adRevenue', component: AdRevenue },
+      { path: '/mergeProfit', component: MergeProfit },
+      { path: '/pay', component: Pay },
+      { path: '/rechargeRecord', component: RechargeRecord },
       { path: '/domains', component: Domains }
     ]
   }

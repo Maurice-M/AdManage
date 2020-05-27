@@ -5,13 +5,44 @@
       <el-breadcrumb-item>财务管理</el-breadcrumb-item>
       <el-breadcrumb-item>工具花费类目</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-alert title="注意输入币种为人民币！！！" type="warning" show-icon></el-alert>
+    <el-alert title="注意输入币种为美元！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-button type="success" @click="addDialogVisible = true">添加日常花费</el-button>
+      <el-row :gutter="10">
+        <el-col :span="4">
+          <el-select style="width:100%" v-model="seachToolId" placeholder="请选择类目">
+            <el-option
+              v-for="item in toolList"
+              :key="item.id"
+              :label="item.toolName"
+              :value="item.id"
+            ></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachStartTime"
+            type="datetime"
+            placeholder="选择起始时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachEndTime"
+            type="datetime"
+            placeholder="选择终止时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" @click="seachToolCost()">查询</el-button>
+          <el-button type="primary" @click="addDialogVisible = true">添加日常花费</el-button>
+        </el-col>
+      </el-row>
       <el-table :data="toolCostList" border>
         <el-table-column label="ID" prop="id" width="100px"></el-table-column>
         <el-table-column label="工具类" prop="toolName"></el-table-column>
-        <el-table-column label="金额(RMB)">
+        <el-table-column label="金额(USD))">
           <template slot-scope="scope">{{ scope.row.toolCost | money }}</template>
         </el-table-column>
         <el-table-column label="归属人员" prop="name" width="150px"></el-table-column>
@@ -127,7 +158,7 @@ export default {
         ],
         cerateTime: [
           {
-            type: 'datetime',
+            type: 'date',
             required: true,
             message: '请选择日期时间',
             trigger: 'change'
@@ -144,7 +175,10 @@ export default {
       toolCostList: [],
       roleId: 0,
       editDialogVisible: false,
-      editFrom: {}
+      editFrom: {},
+      seachToolId: '',
+      seachStartTime: '',
+      seachEndTime: ''
     }
   },
   created() {
@@ -153,7 +187,6 @@ export default {
     ).roleId
     this.getTools()
     this.getToolCostList()
-    this.getUserList()
   },
   methods: {
     /*** 获取人员信息 ***/
@@ -264,6 +297,24 @@ export default {
     paginationChange(newCurrentPage) {
       this.currentPage = newCurrentPage
       this.getToolCostList()
+    },
+    /*** 查询 ***/
+    async seachToolCost() {
+      if (this.seachStartTime === '' || this.seachEndTime === '') {
+        return this.$message.error('查询条件不足')
+      }
+      this.total = 0
+      const { data: res } = await this.$http.post('/api/regular/seachToolCost', {
+        seachToolId: this.seachToolId,
+        seachStartTime: parseInt(this.seachStartTime.getTime() / 1000),
+        seachEndTime: parseInt(this.seachEndTime.getTime() / 1000)
+      })
+      if (res.meta.status !== 200) {
+        return this.$message.error(res.meta.msg)
+      }
+      this.$message.success(res.meta.msg)
+      this.seachToolId = ''
+      this.toolCostList = res.data
     }
   }
 }

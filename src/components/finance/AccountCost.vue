@@ -7,7 +7,33 @@
     </el-breadcrumb>
     <el-alert title="注意FB账户使用列表的币种为美元！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-button type="success" @click="showAddAccountCostDialogVisible()">账户花费</el-button>
+      <el-row :gutter="10">
+        <el-col :span="4">
+          <el-select style="width:100%" v-model="seachUserId" placeholder="请选择人员">
+            <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachStartTime"
+            type="datetime"
+            placeholder="选择起始时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachEndTime"
+            type="datetime"
+            placeholder="选择终止时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" @click="seachAccountCost()">查询</el-button>
+          <el-button type="primary" @click="showAddAccountCostDialogVisible()">添加账户花费</el-button>
+        </el-col>
+      </el-row>
       <el-table :data="accountCostList" border>
         <el-table-column label="ID" prop="id" width="80px"></el-table-column>
         <el-table-column label="费用(USD)" width="150px">
@@ -107,7 +133,6 @@
         <el-form-item label="备注">
           <el-input v-model="editAccountCostForm.msg"></el-input>
         </el-form-item>
-
       </el-form>
       <span slot="footer" class="dialog-footer">
         <el-button @click="editAccountCostDialogVisible = false">取 消</el-button>
@@ -135,7 +160,9 @@ export default {
         userId: [
           { required: true, message: '请选择归属人员', trigger: 'change' }
         ],
-        accountCost: [{ required: true, message: '请输入账花费', trigger: 'blur' }],
+        accountCost: [
+          { required: true, message: '请输入账花费', trigger: 'blur' }
+        ],
         cerateTime: [
           {
             type: 'date',
@@ -153,8 +180,13 @@ export default {
       roleId: 0,
       editAccountCostForm: {},
       editAccountCostFormRules: {
-        accountCost: [{ required: true, message: '请输入花费', trigger: 'blur' }]
-      }
+        accountCost: [
+          { required: true, message: '请输入花费', trigger: 'blur' }
+        ]
+      },
+      seachUserId: '',
+      seachStartTime: '',
+      seachEndTime: ''
     }
   },
   created() {
@@ -162,6 +194,7 @@ export default {
       unescape(window.sessionStorage.getItem('data'))
     ).roleId
     this.getAccountCostList()
+    this.getUserList()
   },
   methods: {
     /*** 添加账户花费对话框 - 监听关闭事件 ***/
@@ -185,7 +218,9 @@ export default {
     addAccountCost() {
       this.$refs.addAccountCostFormRef.validate(async valid => {
         if (!valid) return
-        this.addAccountCostForm.cerateTime = parseInt(this.addAccountCostForm.cerateTime.getTime() / 1000)
+        this.addAccountCostForm.cerateTime = parseInt(
+          this.addAccountCostForm.cerateTime.getTime() / 1000
+        )
         const { data: res } = await this.$http.post(
           '/api/regular/addAccountCost',
           this.addAccountCostForm
@@ -225,9 +260,12 @@ export default {
       if (confirmResult !== 'confirm') {
         return this.$message.info('已取消删除操作')
       }
-      const { data: res } = await this.$http.post('/api/regular/removeAccountCost', {
-        id: id
-      })
+      const { data: res } = await this.$http.post(
+        '/api/regular/removeAccountCost',
+        {
+          id: id
+        }
+      )
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
       }
@@ -236,10 +274,9 @@ export default {
     },
     /*** 修改账户花费对话框***/
     async showeditAccountCostDialogVisible(id) {
-      const { data: res } = await this.$http.post(
-        '/api/regular/getAccountCostById',
-        { id: id }
-      )
+      const {
+        data: res
+      } = await this.$http.post('/api/regular/getAccountCostById', { id: id })
       if (res.meta.status !== 200) {
         return this.$message.error(res.meta.msg)
       }
@@ -265,6 +302,24 @@ export default {
     paginationChange(newCurrentPage) {
       this.currentPage = newCurrentPage
       this.getAccountCostList()
+    },
+    /*** 查询FB账户 ***/
+    async seachAccountCost() {
+      if (this.seachStartTime !== '' && this.seachEndTime !== '') {
+        const { data: res } = await this.$http.post('/api/regular/seachAccountCost', {
+          seachUserId: this.seachUserId,
+          seachStartTime: parseInt(this.seachStartTime.getTime() / 1000),
+          seachEndTime: parseInt(this.seachEndTime.getTime() / 1000)
+        })
+        if (res.meta.status !== 200) {
+          return this.$message.error(res.meta.msg)
+        }
+        this.$message.success(res.meta.msg)
+        this.seachUserId = ''
+        this.accountCostList = res.data
+      } else {
+        return this.$message.error('请选择查询时间段')
+      }
     }
   }
 }

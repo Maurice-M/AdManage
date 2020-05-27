@@ -361,6 +361,38 @@ router.post('/editToolCost', (req, res) => {
     })
 })
 
+/*** 工具花费查询 ***/
+router.post('/seachToolCost', (req, res) => {
+    let seachToolId = req.body.seachToolId
+    let seachStartTime = req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime   
+        if (seachToolId === '') {
+            let seachToolCostSql = $sql.regular.seachToolCost
+            conn.query(seachToolCostSql, [seachStartTime, seachEndTime], (err, result) => {
+                if (err) {
+                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                }
+                if (result) {
+                    jsonWrite(res, {data: result, meta: {status: 200, msg: '工具花费查询成功'}})
+                } else {
+                    jsonWrite(res, {data: null, meta: {status: 201, msg: '工具花费查询失败'}})
+                }
+            })
+        } else {
+            let seachToolCostSql = $sql.regular.seachToolIdToolCost
+            conn.query(seachToolCostSql, [seachToolId, seachStartTime, seachEndTime], (err, result) => {
+                if (err) {
+                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                }
+                if (result) {
+                    jsonWrite(res, {data: result, meta: {status: 200, msg: '工具花费查询成功'}})
+                } else {
+                    jsonWrite(res, {data: null, meta: {status: 201, msg: '工具花费查询失败'}})
+                }
+            })
+        }   
+})
+
 /*** 添加广告商 ***/
 router.post('/addAdvertisers', (req, res) => {
     let adName = req.body.adName
@@ -458,17 +490,39 @@ router.post('/addAdCost', (req, res) => {
     let adCost = req.body.adCost
     let formalities = req.body.formalities
     let cerateTime = req.body.cerateTime
+    let price = (Number(accountCost) + Number(adCost) * (1 + Number(formalities))).toFixed(2)
+    let outMoney = $sql.regular.outMoney
     let addAdCostSql = $sql.regular.addAdCost
-    conn.query(addAdCostSql, [userId, adId, accountCost, adCost, formalities, cerateTime], (err, result) => {
-        if (err) {
+    let seachPerbalance = $sql.regular.seachPerbalance
+    conn.query(seachPerbalance, (err2, perBalance) => {
+        if (err2) {
             jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
         }
-        if (result) {
-            jsonWrite(res, {data: result, meta: {status: 200, msg: '添加广告花费成功'}})
-        } else {
-            jsonWrite(res, {data: null, meta: {status: 201, msg: '添加广告花费失败'}})
+        if (perBalance) {
+            let balance =Number(perBalance[0].balance) - Number(price)
+            conn.query(outMoney, [userId,price, balance, '广告花费', 1,cerateTime], (err3, outMoney) => {
+                if (err3) {
+                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                }
+                if (outMoney) {
+                    console.log('插入消费记录成功')
+                    conn.query(addAdCostSql, [userId, adId, accountCost, adCost, formalities, cerateTime], (err, result) => {
+                        if (err) {
+                            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                        }
+                        if (result) {
+                            jsonWrite(res, {data: result, meta: {status: 200, msg: '添加广告花费成功'}})
+                        } else {
+                            jsonWrite(res, {data: null, meta: {status: 201, msg: '添加广告花费失败'}})
+                        }
+                    })
+                }
+            })
+
         }
     })
+
+    
 })
 
 /*** 获取广告花费列白 ***/
@@ -545,6 +599,63 @@ router.post('/editAdCost', (req, res) => {
             jsonWrite(res, {data: null, meta: {status: 201, msg: '修改广告花费失败'}})
         }
     })
+})
+
+/*** 广告花费查询 ***/
+router.post('/seachAdCost', (req, res) => {
+    let seachAdId = req.body.seachAdId
+    let seachUserId = req.body.seachUserId
+    let seachStartTime = req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime    
+    if (seachAdId === '' && seachUserId === ''){
+        let seachAdCostSql = $sql.regular.seachTimeAdCost
+        conn.query(seachAdCostSql, [seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '广告花费查询成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '广告花费查询失败'}})
+            }
+        })
+    } else if (seachAdId === '' && seachUserId !== ''){
+        let seachUserIdAdCost = $sql.regular.seachUserIdAdCost
+        conn.query(seachUserIdAdCost, [seachUserId,seachUserId,seachStartTime,seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '广告花费查询成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '广告花费查询失败'}})
+            }
+        })
+    } else if(seachAdId !== '' && seachUserId === '') {
+        let seachAdIdAdCost = $sql.regular.seachAdIdAdCost
+        conn.query(seachAdIdAdCost, [seachAdId,seachStartTime,seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '广告花费查询成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '广告花费查询失败'}})
+            }
+        })
+    } else if (seachAdId !== '' && seachUserId !== '') {
+        let seachUsuerAdIdAdCost = $sql.regular.seachUsuerAdIdAdCost
+        conn.query(seachUsuerAdIdAdCost, [seachUserId,seachUserId,seachAdId,seachStartTime,seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '广告花费查询成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '广告花费查询失败'}})
+            }
+        })
+    }
 })
 
 /*** 添加网盟 ***/
@@ -714,6 +825,67 @@ router.post('/removeNaMoney', (req, res) => {
     })
 })
 
+/*** 网盟收款查询 ***/
+router.post('/seachNamoney', (req, res) => {
+    let seachNaId = req.body.seachNaId
+    let seachUserId = req.body.seachUserId
+    let seachStartTime = req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime
+    if(seachUserId !=='' && seachNaId === ''){
+        let seachUserIdNamoneySQl = $sql.regular.seachUserIdNamoney
+        conn.query(seachUserIdNamoneySQl, [seachUserId,seachStartTime,seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询网盟汇款成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询网盟汇款失败'}})
+            }
+        })
+    }
+     if(seachUserId === '' && seachNaId === ''){
+        let seachTimeNamoneySql = $sql.regular.seachTimeNamoney
+        conn.query(seachTimeNamoneySql, [seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询网盟汇款成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询网盟汇款失败'}})
+            }
+        })
+    }
+    if(seachUserId === '' && seachNaId !== '') {
+        let seachNaIdNamoneySQl = $sql.regular.seachNaIdNamoney
+        conn.query(seachNaIdNamoneySQl, [seachNaId, seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询网盟汇款成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询网盟汇款失败'}})
+            }
+        })
+    } 
+    if(seachUserId !== '' && seachNaId !== '') {
+        let seachUserIdNaId = $sql.regular.seachUserIdNaId
+        conn.query(seachUserIdNaId, [seachUserId,seachNaId,seachStartTime,seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询网盟汇款成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询网盟汇款失败'}})
+            }
+        })
+    }
+    
+})
+
 /*** 添加账户花费 ***/
 router.post('/addAccountCost', (req, res) => {
     let userId = req.body.userId
@@ -808,6 +980,38 @@ router.post('/editAccountCost', (req, res) => {
     })
 })
 
+/*** fb账户查询 ***/
+router.post('/seachAccountCost', (req, res) => {
+    let seachUserId = req.body.seachUserId
+    let seachStartTime = req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime
+    if (seachUserId === '') {
+        let seachTimeAccountCost = $sql.regular.seachTimeAccountCost
+        conn.query(seachTimeAccountCost, [seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: 'fb账户查询成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: 'fb账户查询失败'}})
+            }
+        })
+    } else {
+        let seachUserAccountCost = $sql.regular.seachUserAccountCost
+        conn.query(seachUserAccountCost, [seachUserId,seachStartTime,seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: 'fb账户查询成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: 'fb账户查询失败'}})
+            }
+        })
+    }
+    
+})
 /*** 添加个人提成 ***/
 router.post('/addCommission', (req, res) => {
     let userId = req.body.userId
@@ -921,18 +1125,10 @@ router.post('/removeExchange', (req, res) => {
 })
 
 /*** 获取薪资列表 ***/
-router.post('/getPayList', (req, res) => {
-    let monthStart = req.body.monthStart
-    let monthEnd = req.body.monthEnd
-    let getPayListSql = $sql.regular.getPayList
-    conn.query(getPayListSql, [
-        monthStart, monthEnd,
-        monthStart, monthEnd,
-        monthStart, monthEnd,
-        monthStart, monthEnd,
-        monthStart, monthEnd,
-        monthStart, monthStart
-    ], (err, result) => {
+router.post('/getPay', (req, res) => {
+    let preTime = req.body.preTime
+    let getPaySql = $sql.regular.getPay
+    conn.query(getPaySql, [preTime,preTime,preTime,preTime,preTime,preTime,preTime,preTime], (err, result) => {
         if (err) {
             jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
         }
@@ -1039,6 +1235,37 @@ router.post('/removePublic', (req, res) => {
     })
 })
 
+/*** 查询公共收益 ***/
+router.post('/seachPublic', (req, res) => {
+    let seachNaId = req.body.seachNaId
+    let seachStartTime = req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime
+    if (seachNaId === '') {
+        let seachTimePublic = $sql.regular.seachTimePublic
+        conn.query(seachTimePublic, [seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询公共收益成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询公共收益失败'}})
+            } 
+        })
+    } else {
+        let seachNaIdPublic = $sql.regular.seachNaIdPublic
+        conn.query(seachNaIdPublic, [seachNaId, seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询公共收益成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询公共收益失败'}})
+            } 
+        }) 
+    }
+})
 //获取收益
 router.post('/getProfit', (req, res) => {
     let preTime = req.body.preTime
@@ -1074,7 +1301,7 @@ router.post('/getProfit', (req, res) => {
             for(var x=0;x<list.length;x++) {
                 for (var y=0;y<toolCost.length;y++) {
                     if(list[x].date === toolCost[y].date){
-                        list[x].toolCost = toolCost[y].toolCost * toolCost[y].RMB_USD
+                        list[x].toolCost = toolCost[y].toolCost
                     }
                 }
             }
@@ -1114,11 +1341,31 @@ router.post('/getProfit', (req, res) => {
                                             }
                                         }
                                     }
-                                    for(var i=0;i<31;i++) {
-                                        list[i].profit = list[i].NaMoney - list[i].toolCost - list[i].adCost
-                                        
-                                    }
-                                    jsonWrite(res, {data: list, meta: {status: 200, msg: '收益数据获取成功'}}) 
+                                    let getMonthDomain = $sql.regular.getMonthDomain
+                                    conn.query(getMonthDomain, [preTime], (err5, domainPrice) => {
+                                        if (err5) {
+                                            jsonWrite(res, {data: err1, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                                        }
+                                        if (domainPrice) {
+                                            for(var x=0;x<list.length;x++) {
+                                                for (var y=0;y<domainPrice.length;y++) {
+                                                    if(list[x].date === domainPrice[y].date){
+                                                        list[x].toolCost = list[x].toolCost + domainPrice[y].domainPrice
+                                                    }
+                                                }
+                                            }
+                                            for(var i=0;i<31;i++) {
+                                                list[i].profit = list[i].NaMoney - list[i].toolCost - list[i].adCost
+                                                
+                                            }
+                                            jsonWrite(res, {data: list, meta: {status: 200, msg: '收益数据获取成功'}}) 
+                                        }
+                                    })
+
+
+
+
+                                    
                                 }
                             })
                         }
@@ -1187,6 +1434,38 @@ router.post('/removeTransform', (req, res) => {
             jsonWrite(res, {data: null, meta: {status: 201, msg: '删除转化失败'}})
         }
     })
+})
+
+//查询公共收益
+router.post('/seachTransform', (req, res) => {
+    let seachUserId = req.body.seachUserId
+    let seachStartTime = req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime
+    if (seachUserId === '') {
+        let seachTimeTransform = $sql.regular.seachTimeTransform
+        conn.query(seachTimeTransform, [seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询公共收益成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询公共收益失败'}})
+            }
+        })
+    } else {
+        let seachUserTransform = $sql.regular.seachUserTransform
+        conn.query(seachUserTransform, [seachUserId,seachStartTime, seachEndTime], (err, result) => {
+            if (err) {
+                jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+            }
+            if (result) {
+                jsonWrite(res, {data: result, meta: {status: 200, msg: '查询公共收益成功'}})
+            } else {
+                jsonWrite(res, {data: null, meta: {status: 201, msg: '查询公共收益失败'}})
+            }
+        })
+    }
 })
 
 //查询ROI
@@ -1284,6 +1563,206 @@ router.post('/seachRoi', (req, res) => {
     })
 })
 
+//广告收支表
+router.post('/getAdRevenue', (req, res) => {
+    let preTime = req.body.preTime
+    let getAdRevenueAdCost = $sql.regular.getAdRevenueAdCost
+    let getBlitzAdsGroupList = $sql.regular.getBlitzAdsGroupList
+    let list = []
+    for(var i =01;i<=31;i++) {
+        if(i<10){
+            list.push({
+                date: '0' + i,
+                adCost: 0,
+                handlingFee: 0,
+                BlitzAdsGroup: 0,
+                mobooka: 0,
+                ADEER: 0,
+                profit: 0
+            })
+        }else{
+            list.push({
+                date: i + '',
+                adCost: 0,
+                handlingFee: 0,
+                BlitzAdsGroup: 0,
+                mobooka: 0,
+                ADEER: 0,
+                profit: 0
+            })
+        }
+    }
+    conn.query(getAdRevenueAdCost, [preTime], (err1, adCost) => {
+        if (err1) {
+            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+        }
+        if (adCost) {
+            for (var x=0;x<list.length;x++){
+                for(var y=0;y<adCost.length;y++){
+                    if(list[x].date == adCost[y].date){
+                        list[x].adCost = (adCost[y].adCost).toFixed(2)
+                        list[x].handlingFee = ((list[x].adCost) * 0.03).toFixed(2)
+                    }
+                }
+            }
+            conn.query(getBlitzAdsGroupList, [preTime, 19], (err2, BlitzAdsGroup) => {
+                if (err2) {
+                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                }
+                if (BlitzAdsGroup) {
+                    for (var x=0;x<list.length;x++){
+                        for(var y=0;y<BlitzAdsGroup.length;y++){
+                            if(list[x].date == BlitzAdsGroup[y].date){
+                                list[x].BlitzAdsGroup = (BlitzAdsGroup[y].remitMoney).toFixed(2)
+                            }
+                        }
+                    }
+                    conn.query(getBlitzAdsGroupList, [preTime, 20], (err3, mobooka) => {
+                        if (err3) {
+                            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                        }
+                        if (mobooka) {
+                            for (var x=0;x<list.length;x++){
+                                for(var y=0;y<mobooka.length;y++){
+                                    if(list[x].date == mobooka[y].date){
+                                        list[x].mobooka = (mobooka[y].remitMoney).toFixed(2) 
+                                    }
+                                }
+                            }
+                            conn.query(getBlitzAdsGroupList, [preTime, 21], (err4, ADEER) => {
+                                if (err4) {
+                                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                                }
+                                if (ADEER) {
+                                    for (var x=0;x<list.length;x++){
+                                        for(var y=0;y<ADEER.length;y++){
+                                            if(list[x].date == ADEER[y].date){
+                                                list[x].ADEER = (ADEER[y].remitMoney).toFixed(2) 
+                                            }
+                                        }
+                                    }
+                                    list.forEach(item => {
+                                        item.profit = (Number(item.BlitzAdsGroup) + Number(item.mobooka) + Number(item.ADEER) - item.handlingFee - item.adCost).toFixed(2)
+                                    })
+                                    jsonWrite(res, {data: list, meta: {status: 200, msg: '获取广告收支列表成功'}})
+                                }
+                            })
+                        }
+                    })
+                }
+            })
 
+
+            
+        } else {
+            jsonWrite(res, {data: null, meta: {status: 201, msg: '获取广告收支列表失败'}})
+        }
+    })
+
+})
+
+//合并利润表
+router.post('/getMergeProfit', (req, res) => {
+    let preTime = req.body.preTime
+    let getMergeProfit = $sql.regular.getMergeProfit
+    conn.query(getMergeProfit, [preTime,preTime,preTime,preTime,preTime,preTime], (err, result) => {
+        if (err) {
+            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+        }
+        if (result) {
+            jsonWrite(res, {data: result, meta: {status: 200, msg: '广告合并利润表获取成功'}})
+        } else {
+            jsonWrite(res, {data: null, meta: {status: 201, msg: '广告合并利润表获取失败'}})
+        }
+    })
+})
+
+/***  充值 ***/
+router.post('/addMoney', (req, res) => {
+    let price = req.body.price
+    let cerateTime = parseInt(new Date().getTime() / 1000)
+    let seachPerbalance = $sql.regular.seachPerbalance
+    let addMoney = $sql.regular.addMoney
+    conn.query(seachPerbalance, (err1, perBalance) => {
+        if (err1) {
+            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+        }
+        if (perBalance) {
+            let balance = Number(perBalance[0].balance) + Number(price)
+            conn.query(addMoney, [13, price, balance, '充值',0, cerateTime], (err2, result) => {
+                if (err2) {
+                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                }
+                if (result) {
+                    jsonWrite(res, {data: result, meta: {status: 200, msg: '充值成功'}})
+                } else {
+                    jsonWrite(res, {data: null, meta: {status: 201, msg: '充值失败'}})
+                }
+            })
+        } else {
+            jsonWrite(res, {data: null, meta: {status: 201, msg: '查询余额失败！'}}) 
+        }
+    })
+})
+
+/*** 获取信用卡费用列表 ***/
+router.post('/getMoney', (req, res) => {
+    let getMoney = $sql.regular.getMoney
+    conn.query(getMoney, (err, result) => {
+        if (err) {
+            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+        }
+        if (result) {
+            jsonWrite(res, {data: result, meta: {status: 200, msg: '余额列表成功'}})
+        } else {
+            jsonWrite(res, {data: null, meta: {status: 201, msg: '余额列表失败'}})
+        }
+    })
+})
+
+/*** 添加信用卡消费 ***/
+router.post('/outMoney', (req, res) => {
+    let userId = req.body.userId
+    let price = req.body.price
+    let msg = req.body.msg  
+    let cerateTime = req.body.cerateTime
+    let seachPerbalance = $sql.regular.seachPerbalance
+    let outToolMoney = $sql.regular.outToolMoney
+    conn.query(seachPerbalance, (err1, perBalance) => {
+        if (err1) {
+            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+        }
+        if (perBalance) {
+            let balance = Number(perBalance[0].balance) - Number(price)
+            conn.query(outToolMoney, [userId, price, balance, msg, 1, cerateTime], (err2, result) => {
+                if (err2) {
+                    jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+                }
+                if (result) {
+                    jsonWrite(res, {data: result, meta: {status: 200, msg: '信用卡消费添加成功'}})
+                } else {
+                    jsonWrite(res, {data: null, meta: {status: 201, msg: '信用卡消费添加失败'}})
+                }
+            })
+        }
+    })
+})
+
+/*** 信用卡消费记录查询 ***/
+router.post('/seachMoney', (req, res) => {
+    let seachStartTime= req.body.seachStartTime
+    let seachEndTime = req.body.seachEndTime
+    let seachMoney = $sql.regular.seachMoney
+    conn.query(seachMoney, [seachStartTime, seachEndTime], (err, result) => {
+        if (err) {
+            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+        }
+        if (result) {
+            jsonWrite(res, {data: result, meta: {status: 200, msg: '信用卡消费查询成功'}})
+        } else {
+            jsonWrite(res, {data: null, meta: {status: 201, msg: '信用卡消费查询失败'}})
+        }
+    })
+})
 
 module.exports = router

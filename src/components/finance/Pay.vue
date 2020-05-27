@@ -5,46 +5,35 @@
       <el-breadcrumb-item>财务管理</el-breadcrumb-item>
       <el-breadcrumb-item>薪资列表</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-alert title="当前页面费用为人民币！！！" type="warning" show-icon></el-alert>
     <el-card>
-      <el-table :data="payList" border>
+      <el-row :gutter="20">
+        <el-col :span="6">
+          <el-date-picker style="width:100%" v-model="month" type="month" placeholder="请选择月份"></el-date-picker>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" @click="seachPay()">查询</el-button>
+        </el-col>
+      </el-row>
+      <el-table border :data="payList">
         <el-table-column label="姓名" prop="name"></el-table-column>
+        <el-table-column label="总收入" prop="naMoney"></el-table-column>
+        <el-table-column label="总花费">
+          <template slot-scope="scope">
+            {{scope.row.toolCost + scope.row.adCost + scope.row.rcCost * scope.row.RMB_USD + scope.row.domainPrice | money }}
+          </template>
+        </el-table-column>
+        <el-table-column label="利润">
+          <template slot-scope="scope">
+            {{ scope.row.naMoney - (scope.row.toolCost + scope.row.adCost + scope.row.rcCost * scope.row.RMB_USD + scope.row.domainPrice) | money }}
+          </template>
+        </el-table-column>
         <el-table-column label="基本工资" prop="price"></el-table-column>
-        <el-table-column label="总收益" prop="remitMoneyTotal">
+        <el-table-column label="结算">
           <template slot-scope="scope">
-            {{ scope.row.remitMoneyTotal * scope.row.USD_RMB | money }}
-          </template>
-        </el-table-column>
-        <el-table-column label="总支出">
-          <template slot-scope="scope">
-            {{
-              scope.row.costTotal +
-              scope.row.adTotal +
-              scope.row.domainTotal +
-              scope.row.toolCostTotal | money
-            }}
-          </template>
-        </el-table-column>
-        <el-table-column label="净收入">
-          <template slot-scope="scope">
-            {{
-              scope.row.remitMoneyTotal * scope.row.USD_RMB -
-              (scope.row.costTotal +
-              scope.row.adTotal +
-              scope.row.domainTotal +
-              scope.row.toolCostTotal) | money
-            }}
-          </template>
-        </el-table-column>
-        <el-table-column label="提成比例" prop="commission"></el-table-column>
-        <el-table-column label="工资">
-          <template slot-scope="scope">
-            <span v-if="scope.row.remitMoneyTotal * scope.row.USD_RMB - (scope.row.costTotal + scope.row.adTotal + scope.row.domainTotal + scope.row.toolCostTotal) > 0">
-              {{ scope.row.price + scope.row.commission * (scope.row.remitMoneyTotal * scope.row.USD_RMB - (scope.row.costTotal + scope.row.adTotal + scope.row.domainTotal + scope.row.toolCostTotal)) | money }}
+            <span v-if="scope.row.naMoney - (scope.row.toolCost + scope.row.adCost + scope.row.rcCost * scope.row.RMB_USD + scope.row.domainPrice) > 0">
+              {{ scope.row.price + scope.row.commission * (scope.row.naMoney - (scope.row.toolCost + scope.row.adCost + scope.row.rcCost * scope.row.RMB_USD + scope.row.domainPrice)) | money }}
             </span>
-            <span v-if="scope.row.remitMoneyTotal * scope.row.USD_RMB - (scope.row.costTotal + scope.row.adTotal + scope.row.domainTotal + scope.row.toolCostTotal) <= 0">
-              {{ scope.row.price | money }}
-            </span>
+            <span v-else>{{ scope.row.price | money }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -56,24 +45,31 @@
 export default {
   data() {
     return {
-      payList: [],
-      monthStart: moment().startOf('month').format('X'),
-      monthEnd: moment().endOf('month').format('X')
+      preTime: parseInt(new Date().getTime() / 1000),
+      month: '',
+      payList: []
     }
   },
   created() {
-    this.getPayList()
+    this.getPay()
   },
   methods: {
-    async getPayList() {
-      const { data: res } = await this.$http.post('/api/regular/getPayList', {
-        monthStart: this.monthStart,
-        monthEnd: this.monthEnd
+    async getPay() {
+      const { data: res } = await this.$http.post('/api/regular/getPay', {
+        preTime: this.preTime
       })
       if (res.meta.status !== 200) {
-        this.$message.error(res.meta.msg)
+        return this.$message.error(res.meta.msg)
       }
+      this.$message.success(res.meta.msg)
       this.payList = res.data
+    },
+    seachPay() {
+      if (this.month === '') {
+        return this.$message.error('请选择查询月份')
+      }
+      this.preTime = parseInt(this.month.getTime() / 1000)
+      this.getPay()
     }
   }
 }

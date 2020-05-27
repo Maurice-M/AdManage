@@ -3,7 +3,7 @@
     <el-breadcrumb separator-class="el-icon-arrow-right">
       <el-breadcrumb-item :to="{ path: '/home' }">首页</el-breadcrumb-item>
       <el-breadcrumb-item>财务管理</el-breadcrumb-item>
-      <el-breadcrumb-item>工具类目列表</el-breadcrumb-item>
+      <el-breadcrumb-item>转化信息列表</el-breadcrumb-item>
     </el-breadcrumb>
     <el-card>
       <el-row :gutter="20">
@@ -29,7 +29,33 @@
           ></el-date-picker>
         </el-col>
         <el-col :span="4">
-          <el-button type="success" @click="addTransform()">添加转化</el-button>
+          <el-button type="primary" @click="addTransform()">添加转化</el-button>
+        </el-col>
+      </el-row>
+      <el-row :gutter="10" style="margin-top: 15px">
+        <el-col :span="4">
+          <el-select style="width:100%" v-model="seachUserId" placeholder="请选择人员">
+            <el-option v-for="item in userList" :key="item.id" :label="item.name" :value="item.id"></el-option>
+          </el-select>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachStartTime"
+            type="datetime"
+            placeholder="选择起始时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="5">
+          <el-date-picker
+            style="width:100%"
+            v-model="seachEndTime"
+            type="datetime"
+            placeholder="选择终止时间"
+          ></el-date-picker>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" @click="seachTransform()">查询</el-button>
         </el-col>
       </el-row>
       <el-table :data="transformList" border>
@@ -75,7 +101,10 @@ export default {
       pageSize: 50,
       total: 0,
       transformList: [],
-      roleId: 0
+      roleId: 0,
+      seachUserId: '',
+      seachStartTime: '',
+      seachEndTime: ''
     }
   },
   created() {
@@ -156,6 +185,25 @@ export default {
       }
       this.$message.success(res.meta.msg)
       this.getTransform()
+    },
+    /*** 查询转化 ***/
+    async seachTransform() {
+      if (this.seachStartTime !== '' && this.seachEndTime !== '') {
+        const { data: res } = await this.$http.post('/api/regular/seachTransform', {
+          seachUserId: this.seachUserId,
+          seachStartTime: parseInt(this.seachStartTime.getTime() / 1000),
+          seachEndTime: parseInt(this.seachEndTime.getTime() / 1000)
+        })
+        if (res.meta.status !== 200) {
+          return this.$message.error(res.meta.msg)
+        }
+        this.total = ''
+        this.seachUserId = ''
+        this.$message.success(res.meta.msg)
+        this.transformList = res.data
+      } else {
+        return this.$message.error('请选择查询时间段')
+      }
     }
   }
 }
