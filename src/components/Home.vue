@@ -59,11 +59,14 @@ export default {
         '1': 'el-icon-user',
         '2': 'el-icon-goods',
         '3': 'el-icon-tickets',
-        '4': 'el-icon-box'
+        '4': 'el-icon-box',
+        '5': 'el-icon-picture-outline',
+        '32': 'el-icon-folder-opened'
       },
       isCollapse: false,
       activePath: '',
-      email: ''
+      email: '',
+      roleId: ''
     }
   },
   created() {
@@ -77,6 +80,7 @@ export default {
       if (window.sessionStorage.getItem('data')) {
         const data = JSON.parse(unescape(window.sessionStorage.getItem('data')))
         this.email = data.email
+        this.roleId = data.roleId
       } else {
         this.logout()
       }
@@ -88,7 +92,7 @@ export default {
     },
     /***获取当前菜单列表***/
     async getMenuList() {
-      const { data: res } = await this.$http.get('/api/home/menu')
+      const { data: res } = await this.$http.post('/api/home/menu', { roleId: this.roleId })
       if (res.meta.status !== 200) {
         if (res.meta.status === 201) {
           this.$message.warning(res.meta.msg)

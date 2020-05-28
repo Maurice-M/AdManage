@@ -8,8 +8,8 @@ const JwtUtil = require('../config/jwt')
 const conn = mysql.createConnection(db.mysql)
 conn.connect();
 
-var jsonWrite = function(res, ret) {
-    if(typeof ret === 'undefined') {
+var jsonWrite = function (res, ret) {
+    if (typeof ret === 'undefined') {
         res.json({
             code: '1',
             msg: '操作失败'
@@ -20,30 +20,41 @@ var jsonWrite = function(res, ret) {
 }
 
 /*** 获取菜单栏列表 ***/
-router.get('/menu', (req, res) => {
-    const getMenuSql = $sql.home.getMenuList
-    conn.query(getMenuSql, (err, result) => {
-        if (err) {
-            jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
+router.post('/menu', (req, res) => {
+    let roleId = req.body.roleId
+    let getRightId = $sql.home.getRightId
+    let getMenuSql = $sql.home.getMenuList
+    conn.query(getRightId, [roleId], (err1, rightId) => {
+        if (err1) {
+            jsonWrite(res, { data: null, meta: { status: 400, msg: '系统出现问题，请联系技术人员！' } })
         }
-        if (result && result.length > 0) {
-            const list = []
-            for(var i=0;i<result.length;i++){
-                result[i].children = []
-                for(var j=0;j<result.length;j++){
-                    if(result[j].rights_id == result[i].id) {
-                        result[i].children.push(result[j])
+        if (rightId) {
+            let array = (rightId[0].rightsId).split(",")
+            conn.query(getMenuSql, [array], (err2, result) => {
+                if (err2) {
+                    jsonWrite(res, { data: null, meta: { status: 400, msg: '系统出现问题，请联系技术人员！' } })
+                }
+                if (result && result.length > 0) {
+                    const list = []
+                    for (var i = 0; i < result.length; i++) {
+                        result[i].children = []
+                        for (var j = 0; j < result.length; j++) {
+                            if (result[j].rights_id == result[i].id) {
+                                result[i].children.push(result[j])
+                            }
+                        }
+                        if (result[i].rights_id == 0) {
+                            list.push(result[i])
+                        }
                     }
+                    jsonWrite(res, { data: list, meta: { status: 200, msg: '获取菜单列表成功' } })
+                } else {
+                    jsonWrite(res, { data: null, meta: { status: 201, msg: '当前账户未分配权限，请联系管理员！' } })
                 }
-                if(result[i].rights_id == 0) {
-                    list.push(result[i])
-                }
-            }
-            jsonWrite(res, {data: list, meta: {status: 200, msg: '获取菜单列表成功'}})
-        } else {
-            jsonWrite(res, {data: null, meta: {status: 201, msg: '当前账户未分配权限，请联系管理员！'}})
+            })
         }
     })
+
 })
 
 module.exports = router

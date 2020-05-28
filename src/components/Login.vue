@@ -30,8 +30,8 @@ export default {
   data() {
     return {
       loginForm: {
-        email: 'wangxm1135@163.com',
-        password: '123456'
+        email: '',
+        password: ''
       },
       loginFormRules: {
         email: [

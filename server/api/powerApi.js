@@ -40,66 +40,7 @@ router.get('/roles', (req, res) => {
             jsonWrite(res, {data: null, meta: {status: 400, msg: '系统出现问题，请联系技术人员！'}}) 
         }
         if (result) {
-            //合并角色
-      var list =[];
-      for(var i=0;i<result.length;i++){
-          if(JSON.stringify(list).indexOf(result[i].roleName)===-1){      
-            list.push({
-              id:result[i].id,
-              roleName:result[i].roleName,
-              roleDesc:result[i].roleDesc,
-              childrens:[{
-                id:result[i].rightId,
-                authName:result[i].authName,
-                path:result[i].path,
-                rights_id:result[i].rights_id,
-                childrens:[]
-              }]
-            })
-          }else{
-            for(var j=0;j<list.length;j++){
-              if(list[j].roleName == result[i].roleName){
-                list[j].childrens.push({
-                  id:result[i].rightId,
-                  authName:result[i].authName,
-                  path:result[i].path,
-                  rights_id:result[i].rights_id,
-                  childrens:[]
-                })
-              }
-            }
-            
-          }
-      }
-      //合并rights_id 相同的项
-      const rightList=[]
-      for(var i=0;i<list.length;i++){
-        rightList.push({
-          id:list[i].id,
-          roleName:list[i].roleName,
-          roleDesc:list[i].roleDesc,
-          childrens:[]
-        })
-       for(var j=0;j<list[i].childrens.length;j++){
-         if(list[i].childrens[j].rights_id == 0){
-          rightList[i].childrens.push(list[i].childrens[j])
-         }
-           for(var k=0;k<list[i].childrens.length;k++){
-             if(list[i].childrens[k].rights_id == list[i].childrens[j].id){
-              rightList[i].childrens[j].childrens.push({
-                id:list[i].childrens[k].id,
-                authName:list[i].childrens[k].authName,
-                path:list[i].childrens[k].path,
-                rights_id:list[i].childrens[k].rights_id,
-                childrens:null            
-              })
-             }
-           }
-         
-       }
-        
-      }
-            jsonWrite(res, {data: rightList, meta: {status: 200, msg: '获取角色列表成功'}})
+            jsonWrite(res, {data: result, meta: {status: 200, msg: '获取角色列表成功'}})
         }
     })
 })

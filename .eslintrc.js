@@ -18,6 +18,7 @@ module.exports = {
     'spaced-comment': 0,
     'quote-props': 0,
     'no-unused-vars': 0,
-    'no-useless-return': 0
+    'no-useless-return': 0,
+    'handle-callback-err': 0
   }
 }

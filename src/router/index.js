@@ -33,8 +33,16 @@ const RechargeRecord = () => import(/* webpackchunkName: "finance" */ '../compon
 
 /*** 域名管理 ***/
 const Domains = () => import(/* webpackchunkName: "Domains" */ '../components/domain/Domains.vue')
-Vue.use(VueRouter)
 
+/*** 素材管理 ***/
+const Material = () => import(/* webpackchunkName: "Material" */ '../components/material/Material.vue')
+const Classification = () => import(/* webpackchunkName: "Material" */ '../components/material/Classification.vue')
+const Comment = () => import(/* webpackchunkName: "Material" */ '../components/material/Comment.vue')
+
+/*** 投放管理 ***/
+const Drop = () => import(/* webpackchunkName: "Material" */ '../components/drop/Drop.vue')
+
+Vue.use(VueRouter)
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: Login },
@@ -67,7 +75,11 @@ const routes = [
       { path: '/mergeProfit', component: MergeProfit },
       { path: '/pay', component: Pay },
       { path: '/rechargeRecord', component: RechargeRecord },
-      { path: '/domains', component: Domains }
+      { path: '/domains', component: Domains },
+      { path: '/materials', component: Material },
+      { path: '/classification', component: Classification },
+      { path: '/comment/:id', component: Comment },
+      { path: '/drop', component: Drop }
     ]
   }
 ]

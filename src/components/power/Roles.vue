@@ -12,28 +12,7 @@
         </el-col>
       </el-row>
       <el-table :data="roleList" border stripe>
-        <el-table-column type="expand">
-          <template slot-scope="scope">
-            <el-row
-              :class="['borderBottom',i === 0 ? 'borderTop' : '','vcenter']"
-              v-for="(item, i) in scope.row.childrens"
-              :key="i"
-            >
-              <el-col :span="5">
-                <el-tag type="success">{{item.authName}}</el-tag>
-                <i class="el-icon-caret-right"></i>
-              </el-col>
-              <el-col :span="19">
-                <el-tag
-                  type="primary"
-                  v-for="(item2,j) in item.childrens"
-                  :key="j"
-                >{{item2.authName}}</el-tag>
-              </el-col>
-            </el-row>
-          </template>
-        </el-table-column>
-        <el-table-column label="#" type="index"></el-table-column>
+        <el-table-column label="id" prop="id"></el-table-column>
         <el-table-column label="角色名称" prop="roleName"></el-table-column>
         <el-table-column label="角色描述" prop="roleDesc"></el-table-column>
         <el-table-column label="操作" width="210px">
@@ -185,17 +164,8 @@ export default {
         return this.$message.error(res.meta.msg)
       }
       this.rightList = res.data
-      this.getLeafKeys(role, this.defKeys)
+      this.defKeys = role.rightsId.split(',')
       this.setRightsDialigVisible = true
-    },
-    /*** 现有权限, 递归 帅选出二级权限 ***/
-    getLeafKeys(node, arr) {
-      if (!node.childrens) {
-        return arr.push(node.id)
-      }
-      node.childrens.forEach(item => {
-        this.getLeafKeys(item, arr)
-      })
     },
     /*** 分配权限提交 ***/
     async allotRights() {

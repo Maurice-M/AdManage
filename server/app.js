@@ -10,6 +10,9 @@ const homeApi = require('./api/homeApi')
 const powerApi = require('./api/powerApi')
 const regularApi = require('./api/regularApi')
 const domainApi = require('./api/domainApi')
+const materialApi = require('./api/materialApi')
+const uploadApi = require('./api/uploadApi')
+const dropApi = require('./api/dropApi')
 
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -19,6 +22,9 @@ app.use('/api/home', homeApi)
 app.use('/api/power', powerApi)
 app.use('/api/regular', regularApi)
 app.use('/api/domain', domainApi)
+app.use('/api/material', materialApi)
+app.use('/api/upload', uploadApi)
+app.use('/api/drop', dropApi)
 
 app.use((req, res, next) => {
     if(req.url !== '/api/user/login') {

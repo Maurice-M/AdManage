@@ -7,7 +7,8 @@ import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 import moment from 'moment'
 import axios from 'axios'
-
+import VueLazyLoad from 'vue-lazyload'
+Vue.use(VueLazyLoad)
 /** 拦截器 **/
 axios.interceptors.request.use(config => {
   NProgress.start()

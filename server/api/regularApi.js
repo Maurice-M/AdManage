@@ -1550,7 +1550,7 @@ router.post('/seachRoi', (req, res) => {
                                     }
                                     for (var i=0;i<list.length;i++) {
                                         list[i].profit = list[i].NaMoney-list[i].adCost-list[i].accountCost
-                                        list[i].ROI = list[i].NaMoney/(list[i].adCost+list[i].accountCost)
+                                        list[i].ROI = (list[i].NaMoney/(list[i].adCost+list[i].accountCost)).toFixed(2)
                                     }
                                     jsonWrite(res, {data: list, meta: {status: 200, msg: 'ROI数据货获取成功'}}) 
                                 }

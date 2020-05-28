@@ -11,7 +11,7 @@ var sqlMap = {
     },
     power: {
         getRightList: 'select * from rights ORDER BY level ASC',
-        getRoleList: 'select roles.id,roles.roleName,roles.roleDesc,rights.authName,rights.path,(rights.id)as rightId,rights.rights_id from rights,roles WHERE find_in_set(rights.id,roles.rightsId)',
+        getRoleList: 'select * from roles',
         removeRoleById: 'delete from roles where id = ?',
         addRole: "insert into roles (roleName, roleDesc, rightsId) values (?, ?, '1')",
         getAllRights: 'select * from rights ORDER BY level ASC',
@@ -150,7 +150,20 @@ var sqlMap = {
         domainList: 'select domains.*,users.name from domains,users where domains.userId = users.id ORDER BY domains.id DESC LIMIT ? , ?'
     },
     home: {
-        getMenuList: 'select * from rights'
+        getRightId: 'select rightsId from roles where id = ?',
+        getMenuList: 'select * from rights where id in (?)'
+    },
+    material: {
+        addMaterial: 'insert into materials (name, classId, format, url, cerateTime) values (?, ?, ?, ?, ?)',
+        addClassification: 'insert into classification (className) values (?)',
+        getClassification: 'select * from classification',
+        getMaterialTotal: 'select count(*) from materials',
+        getMaterialList: 'select materials.*,classification.className from materials,classification where materials.classId = classification.id ORDER BY materials.id DESC LIMIT ? , ?',
+        getmaterialById: 'select materials.*,classification.className,(select IFNULL(AVG(rate),0) from comment where materialId = ?) as rate from materials,classification where materials.classId = classification.id and materials.id = ?',
+        commentRate: 'SELECT materialId,AVG(rate) AS rate FROM comment WHERE materialId in (?) GROUP BY materialId',
+        seachMaterial: `select materials.*,classification.className from materials,classification where materials.name like ? and materials.classId = classification.id ORDER BY materials.id DESC`,
+        addComment: 'insert into comment (userId, materialId, rate, message, cerateTime) values (?, ?, ?, ?, ?)',
+        getComment: 'select comment.*,users.name from comment,users where comment.userId = users.id and comment.materialId = ? ORDER BY comment.id'
     }
 }
 
