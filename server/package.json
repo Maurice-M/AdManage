@@ -16,7 +16,7 @@
     "jsonwebtoken": "^8.5.1",
     "mysql": "^2.18.1",
     "qiniu": "^7.3.1",
-    "xlsx": "^0.16.1"
+    "xlsx": "^0.17.0"
   },
   "devDependencies": {
     "script-loader": "^0.7.2"
