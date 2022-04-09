@@ -15,7 +15,7 @@
     "express": "^4.17.1",
     "file-saver": "^2.0.2",
     "jsonwebtoken": "^8.5.1",
-    "moment": "^2.25.3",
+    "moment": "^2.29.2",
     "mysql": "^2.18.1",
     "nprogress": "^0.2.0",
     "qiniu": "^7.3.1",
